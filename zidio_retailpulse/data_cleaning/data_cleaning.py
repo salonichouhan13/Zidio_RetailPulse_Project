@@ -9,7 +9,7 @@ import pandas as pd
 # =========================================
 df = pd.read_csv("zidio_retailpulse/DATASET/online_retail_ii.csv", encoding='latin1')
 
-print("✅ Dataset Loaded Successfully")
+print("Dataset Loaded Successfully")
 print("Shape Before Cleaning:", df.shape)
 
 # =========================================

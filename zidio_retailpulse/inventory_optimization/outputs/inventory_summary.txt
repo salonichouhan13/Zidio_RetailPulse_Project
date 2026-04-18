@@ -1,0 +1,11 @@
+ADVANCED INVENTORY OPTIMIZATION
+
+Top Products:
+                             Description  Quantity  ...  Holding_Cost_Total  Total_Inventory_Cost
+5149   WORLD WAR 2 GLIDERS ASSTD DESIGNS     67589  ...         4110.626473           8221.252946
+5028  WHITE HANGING HEART T-LIGHT HOLDER     59838  ...         3867.751285           7735.502569
+2384             JUMBO BAG RED RETROSPOT     49314  ...         3511.196377           7022.392755
+157          60 TEATIME FAIRY CAKE CASES     49118  ...         3504.211752           7008.423503
+292        ASSORTED COLOUR BIRD ORNAMENT     43181  ...         3285.612576           6571.225152
+
+[5 rows x 9 columns]
