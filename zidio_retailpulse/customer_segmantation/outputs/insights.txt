@@ -1,0 +1,9 @@
+RFM CUSTOMER SEGMENTATION
+
+Segment
+At Risk              1973
+Loyal Customers      1858
+Recent Customers      873
+Regular Customers     644
+Best Customers        468
+Name: count, dtype: int64

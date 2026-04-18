@@ -1,0 +1,42 @@
+ RETAILPULSE PROJECT INSIGHTS
+
+Top Selling Products:
+Description
+WORLD WAR 2 GLIDERS ASSTD DESIGNS     67589
+WHITE HANGING HEART T-LIGHT HOLDER    59838
+JUMBO BAG RED RETROSPOT               49314
+60 TEATIME FAIRY CAKE CASES           49118
+ASSORTED COLOUR BIRD ORNAMENT         43181
+Name: Quantity, dtype: int64
+
+Monthly Sales:
+Month
+1      762417.45
+2      758643.91
+3     1009531.35
+4      871488.04
+5     1022326.44
+6      983459.06
+7      918181.86
+8      952380.30
+9     1364783.27
+10    1595390.39
+11    1890977.42
+12    1257552.97
+Name: TotalAmount, dtype: float64
+
+Top Customers:
+Customer ID
+14911.0    262607.98
+14646.0    258576.59
+17511.0    132715.84
+14156.0    130602.79
+13694.0    119233.22
+Name: TotalAmount, dtype: float64
+
+Weekend vs Weekday Sales:
+Is_Weekend
+0    11761225.08
+1     1625907.38
+Name: TotalAmount, dtype: float64
+
