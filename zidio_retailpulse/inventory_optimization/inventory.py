@@ -104,8 +104,4 @@ plt.tight_layout()
 plt.savefig(os.path.join(output_path, "cost_analysis.png"))
 plt.close()
 
-# ---------------------------
-# 9. Output
-# ---------------------------
-print("Advanced Inventory Optimization Done!")
-print(" CSV:", csv_path)
+

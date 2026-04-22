@@ -1,3 +1,9 @@
+#--how to run dashboard---
+#--give the command in the terminal as given below
+# 1---  cd zidio_retailpulse/Dashboard_Streamlit
+# 2----  streamlit run app.py
+
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -23,7 +29,7 @@ df = pd.read_csv(data_path)
 df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
 
 # ---------------------------
-# 🔎 SIDEBAR FILTERS
+#  SIDEBAR FILTERS
 # ---------------------------
 st.sidebar.title("Filters")
 
@@ -48,7 +54,7 @@ if country != "All":
 # ---------------------------
 #  TITLE
 # ---------------------------
-st.markdown("<h1 style='text-align:center;'>🚀 RetailPulse Dashboard</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center;'> RetailPulse Dashboard</h1>", unsafe_allow_html=True)
 
 # ---------------------------
 #  KPI CARDS
