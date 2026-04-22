@@ -6,4 +6,4 @@
  scikit-learn
  plotly
  joblib
- statsmodles
+ statsmodels
