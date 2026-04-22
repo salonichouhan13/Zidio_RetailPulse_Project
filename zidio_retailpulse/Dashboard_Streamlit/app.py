@@ -11,24 +11,32 @@ import os
 st.set_page_config(page_title="RetailPulse Dashboard", layout="wide")
 
 # -----------------------------
-# UI STYLE
+# UI STYLE (MODERN)
 # -----------------------------
 st.markdown("""
 <style>
-.main { background-color: #F8FAFC; }
-.block-container { padding: 1.5rem 2rem; }
-h1, h2, h3 { color: #111827; }
+.main {
+    background-color: #F1F5F9;
+}
+.block-container {
+    padding: 2rem;
+}
+h1 {
+    color: #111827;
+    font-weight: 700;
+}
 .stMetric {
-    background: white;
-    padding: 18px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.06);
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    color: white !important;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
 }
 .stPlotlyChart {
     background: white;
-    padding: 10px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.05);
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -43,30 +51,29 @@ data_path = os.path.join(base_path, "..", "DATASET", "feature_engineered_data.cs
 
 df = pd.read_csv(data_path)
 
-# Clean column names
+# Clean columns
 df.columns = df.columns.str.strip()
 
-# Auto rename
-df.rename(columns={
+# Fix column names
+rename_map = {
     'Customer ID': 'CustomerID',
-    'customer_id': 'CustomerID',
-    'Invoice No': 'InvoiceNo',
-    'invoice_no': 'InvoiceNo'
-}, inplace=True)
+    'Invoice No': 'InvoiceNo'
+}
+df.rename(columns=rename_map, inplace=True)
 
-# Convert date
+# Date convert
 if 'InvoiceDate' in df.columns:
     df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
 
 # -----------------------------
-# SIDEBAR
+# SIDEBAR FILTER
 # -----------------------------
-st.sidebar.header("🔎 Filters")
+st.sidebar.header(" Filters")
 
 if 'Country' in df.columns:
     country = st.sidebar.selectbox(
         "Select Country",
-        ["All"] + sorted(df['Country'].dropna().unique())
+        ["All"] + list(df['Country'].dropna().unique())
     )
     if country != "All":
         df = df[df['Country'] == country]
@@ -76,22 +83,22 @@ if 'Country' in df.columns:
 # -----------------------------
 col1, col2, col3, col4 = st.columns(4)
 
-total_sales = df.get('TotalAmount', pd.Series()).sum()
-
-# Auto detect orders column
-orders = 0
+# Auto detect invoice column
+invoice_col = None
 for col in df.columns:
     if "invoice" in col.lower():
-        orders = df[col].dropna().nunique()
+        invoice_col = col
         break
 
-customers = df.get('CustomerID', pd.Series()).dropna().nunique()
-quantity = df.get('Quantity', pd.Series()).sum()
+total_sales = df['TotalAmount'].sum() if 'TotalAmount' in df.columns else 0
+orders = df[invoice_col].nunique() if invoice_col else 0
+customers = df['CustomerID'].dropna().nunique() if 'CustomerID' in df.columns else 0
+quantity = df['Quantity'].sum() if 'Quantity' in df.columns else 0
 
-col1.metric("💰 Total Sales", f"{total_sales:,.0f}")
-col2.metric("🧾 Orders", orders)
-col3.metric("👥 Customers", customers)
-col4.metric("📦 Quantity", int(quantity))
+col1.metric(" Total Sales", f"{total_sales:,.0f}")
+col2.metric("Orders", orders)
+col3.metric(" Customers", customers)
+col4.metric(" Quantity", int(quantity))
 
 st.markdown("---")
 
@@ -101,19 +108,17 @@ st.markdown("---")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("📈 Sales Trend")
+    st.subheader(" Sales Trend")
     if 'InvoiceDate' in df.columns and 'TotalAmount' in df.columns:
         monthly = df.set_index('InvoiceDate')['TotalAmount'].resample('ME').sum()
         fig = px.line(monthly, color_discrete_sequence=["#6366F1"])
-        fig.update_layout(plot_bgcolor="white", paper_bgcolor="white")
         st.plotly_chart(fig, use_container_width=True)
 
 with col2:
-    st.subheader("📦 Quantity Trend")
+    st.subheader(" Quantity Trend")
     if 'InvoiceDate' in df.columns and 'Quantity' in df.columns:
         qty = df.set_index('InvoiceDate')['Quantity'].resample('ME').sum()
-        fig = px.line(qty, color_discrete_sequence=["#10B981"])
-        fig.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+        fig = px.line(qty, color_discrete_sequence=["#22C55E"])
         st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
@@ -124,8 +129,8 @@ st.markdown("---")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("⚠️ Customer Churn")
-    if 'CustomerID' in df.columns and 'TotalAmount' in df.columns:
+    st.subheader(" Customer Churn")
+    if 'CustomerID' in df.columns:
         churn_df = df.dropna(subset=['CustomerID'])
         churn = churn_df.groupby('CustomerID')['TotalAmount'].sum().reset_index()
         churn['Churn'] = churn['TotalAmount'].apply(
@@ -135,16 +140,17 @@ with col1:
             churn,
             names='Churn',
             color='Churn',
-            color_discrete_map={"Churn": "#EF4444", "Active": "#10B981"}
+            color_discrete_map={
+                "Churn": "#EF4444",
+                "Active": "#22C55E"
+            }
         )
-        fig.update_layout(paper_bgcolor="white")
         st.plotly_chart(fig, use_container_width=True)
 
 with col2:
     st.subheader("👥 Customer Segments")
     if 'CustomerID' in df.columns:
-        cust_df = df.dropna(subset=['CustomerID'])
-        cust = cust_df.groupby('CustomerID').agg({
+        cust = df.dropna(subset=['CustomerID']).groupby('CustomerID').agg({
             'TotalAmount': 'sum',
             'Quantity': 'sum'
         }).reset_index()
@@ -158,9 +164,8 @@ with col2:
                 x='TotalAmount',
                 y='Quantity',
                 color=cust['Segment'].astype(str),
-                color_discrete_sequence=["#6366F1", "#10B981", "#F59E0B"]
+                color_discrete_sequence=["#6366F1", "#22C55E", "#F59E0B"]
             )
-            fig.update_layout(paper_bgcolor="white")
             st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
@@ -171,8 +176,8 @@ st.markdown("---")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("🔮 Demand Forecast")
-    if 'InvoiceDate' in df.columns and 'Quantity' in df.columns:
+    st.subheader(" Demand Forecast")
+    if 'InvoiceDate' in df.columns:
         demand = df.set_index('InvoiceDate')['Quantity'].resample('ME').sum()
 
         if len(demand) > 10:
@@ -188,14 +193,13 @@ with col1:
                 name='Forecast',
                 line=dict(color="#F59E0B", width=3)
             )
-            fig.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             st.plotly_chart(fig, use_container_width=True)
 
 with col2:
-    st.subheader("🏆 Top Products")
-    if 'Description' in df.columns and 'Quantity' in df.columns:
-        inv = df.groupby('Description')['Quantity'].sum().reset_index()
-        top_products = inv.sort_values(by='Quantity', ascending=False).head(10)
+    st.subheader(" Top Products")
+    if 'Description' in df.columns:
+        top_products = df.groupby('Description')['Quantity'].sum().reset_index()
+        top_products = top_products.sort_values(by='Quantity', ascending=False).head(10)
 
         fig = px.bar(
             top_products,
@@ -203,7 +207,26 @@ with col2:
             y='Description',
             orientation='h',
             color='Quantity',
-            color_continuous_scale=['#6366F1', '#10B981']
+            color_continuous_scale=['#6366F1', '#22C55E']
         )
-        fig.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+        st.plotly_chart(fig, use_container_width=True)
+
+# -----------------------------
+# EXTRA GRAPHS (FROM OUTPUTS)
+# -----------------------------
+st.markdown("---")
+st.subheader(" Additional Insights")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    if 'Country' in df.columns:
+        country_sales = df.groupby('Country')['TotalAmount'].sum().reset_index()
+        fig = px.bar(country_sales, x='Country', y='TotalAmount', color='TotalAmount')
+        st.plotly_chart(fig, use_container_width=True)
+
+with col2:
+    if 'CustomerID' in df.columns:
+        top_customers = df.groupby('CustomerID')['TotalAmount'].sum().reset_index().head(10)
+        fig = px.bar(top_customers, x='CustomerID', y='TotalAmount', color='TotalAmount')
         st.plotly_chart(fig, use_container_width=True)
