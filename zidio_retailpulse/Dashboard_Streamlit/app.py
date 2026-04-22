@@ -110,7 +110,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # SALES
 # ---------------------------
 with tab1:
-    monthly = df.set_index('InvoiceDate')['TotalAmount'].resample('M').sum()
+    monthly = df.set_index('InvoiceDate')['TotalAmount'].resample('ME').sum()
 
     fig = px.line(monthly, title="Monthly Sales Trend",
                   color_discrete_sequence=['#00C9A7'])
