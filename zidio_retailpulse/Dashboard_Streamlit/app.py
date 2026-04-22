@@ -11,35 +11,34 @@ import os
 st.set_page_config(page_title="RetailPulse Dashboard", layout="wide")
 
 # -----------------------------
-# DARK UI STYLE
+# CLEAN UI (NO BORDER + PREMIUM)
 # -----------------------------
 st.markdown("""
 <style>
+
 .main {
     background-color: #0f172a;
 }
-.block-container {
-    padding: 1.5rem 2rem;
+
+/* remove graph box */
+.stPlotlyChart {
+    background: transparent !important;
+    padding: 0px !important;
+    border-radius: 0px !important;
+    box-shadow: none !important;
 }
+
+/* remove container borders */
+[data-testid="stVerticalBlock"] > div {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* headings */
 h1, h2, h3 {
     color: #f1f5f9;
 }
 
-/* KPI BOX */
-.stMetric {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    padding: 18px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
-    color: white;
-}
-
-/* CHART BOX */
-.stPlotlyChart {
-    background: #1e293b;
-    padding: 15px;
-    border-radius: 12px;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -54,7 +53,7 @@ data_path = os.path.join(base_path, "..", "DATASET", "feature_engineered_data.cs
 df = pd.read_csv(data_path)
 df.columns = df.columns.str.strip()
 
-# Rename columns if needed
+# Fix column names
 rename_map = {
     'Customer ID': 'CustomerID',
     'Invoice No': 'InvoiceNo'
@@ -77,11 +76,11 @@ if 'Country' in df.columns:
         df = df[df['Country'] == country]
 
 # -----------------------------
-# KPI CARDS
+# KPI CARDS (COLOR FIXED)
 # -----------------------------
 col1, col2, col3, col4 = st.columns(4)
 
-total_sales = df['TotalAmount'].sum()
+total_sales = df.get('TotalAmount', pd.Series()).sum()
 
 orders = 0
 for col in df.columns:
@@ -89,18 +88,41 @@ for col in df.columns:
         orders = df[col].dropna().nunique()
         break
 
-customers = df['CustomerID'].dropna().nunique()
-quantity = df['Quantity'].sum()
+customers = df.get('CustomerID', pd.Series()).dropna().nunique()
+quantity = df.get('Quantity', pd.Series()).sum()
 
-col1.metric("💰 Total Sales", f"{total_sales:,.0f}")
-col2.metric("🧾 Orders", orders)
-col3.metric("👥 Customers", customers)
-col4.metric("📦 Quantity", int(quantity))
+col1.markdown(f"""
+<div style="background:#DCFCE7; padding:20px; border-radius:12px;">
+<h4>💰 Total Sales</h4>
+<h2>{total_sales:,.0f}</h2>
+</div>
+""", unsafe_allow_html=True)
+
+col2.markdown(f"""
+<div style="background:#FEF9C3; padding:20px; border-radius:12px;">
+<h4>🧾 Orders</h4>
+<h2>{orders}</h2>
+</div>
+""", unsafe_allow_html=True)
+
+col3.markdown(f"""
+<div style="background:#FFEDD5; padding:20px; border-radius:12px;">
+<h4>👥 Customers</h4>
+<h2>{customers}</h2>
+</div>
+""", unsafe_allow_html=True)
+
+col4.markdown(f"""
+<div style="background:#E0F2FE; padding:20px; border-radius:12px;">
+<h4>📦 Quantity</h4>
+<h2>{int(quantity)}</h2>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
 # -----------------------------
-# SALES & QUANTITY
+# SALES + QUANTITY
 # -----------------------------
 col1, col2 = st.columns(2)
 
@@ -109,37 +131,54 @@ qty = df.set_index('InvoiceDate')['Quantity'].resample('ME').sum()
 
 with col1:
     st.subheader("📈 Sales Trend")
-    fig = px.line(monthly, color_discrete_sequence=["#6366F1"])
-    fig.update_layout(template="plotly_dark")
+    fig = px.line(monthly, color_discrete_sequence=["#60A5FA"])
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 with col2:
     st.subheader("📦 Quantity Trend")
-    fig = px.line(qty, color_discrete_sequence=["#22C55E"])
-    fig.update_layout(template="plotly_dark")
+    fig = px.line(qty, color_discrete_sequence=["#34D399"])
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 
 # -----------------------------
-# CHURN & SEGMENTATION
+# CHURN + SEGMENTATION
 # -----------------------------
 col1, col2 = st.columns(2)
 
+churn_df = df.dropna(subset=['CustomerID'])
+
 with col1:
     st.subheader("⚠️ Customer Churn")
-    churn_df = df.dropna(subset=['CustomerID'])
 
     churn = churn_df.groupby('CustomerID')['TotalAmount'].sum().reset_index()
-    churn['Churn'] = churn['TotalAmount'].apply(lambda x: "Churn" if x < 1000 else "Active")
+    churn['Churn'] = churn['TotalAmount'].apply(
+        lambda x: "Churn" if x < 1000 else "Active"
+    )
 
     fig = px.pie(
         churn,
         names='Churn',
         color='Churn',
-        color_discrete_map={"Churn": "#ef4444", "Active": "#22c55e"}
+        color_discrete_map={
+            "Churn": "#F87171",
+            "Active": "#4ADE80"
+        }
     )
-    fig.update_layout(template="plotly_dark")
+
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
 with col2:
@@ -150,23 +189,29 @@ with col2:
         'Quantity': 'sum'
     }).reset_index()
 
-    kmeans = KMeans(n_clusters=3, random_state=42)
-    cust['Segment'] = kmeans.fit_predict(cust[['TotalAmount', 'Quantity']])
+    if len(cust) > 3:
+        kmeans = KMeans(n_clusters=3, random_state=42)
+        cust['Segment'] = kmeans.fit_predict(cust[['TotalAmount', 'Quantity']])
 
-    fig = px.scatter(
-        cust,
-        x='TotalAmount',
-        y='Quantity',
-        color=cust['Segment'].astype(str),
-        color_discrete_sequence=["#6366F1", "#22C55E", "#F59E0B"]
-    )
-    fig.update_layout(template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
+        fig = px.scatter(
+            cust,
+            x='TotalAmount',
+            y='Quantity',
+            color=cust['Segment'].astype(str),
+            color_discrete_sequence=["#60A5FA", "#34D399", "#FBBF24"]
+        )
+
+        fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 
 # -----------------------------
-# FORECAST & TOP PRODUCTS
+# FORECAST + TOP PRODUCTS
 # -----------------------------
 col1, col2 = st.columns(2)
 
@@ -179,11 +224,21 @@ with col1:
         model = ARIMA(demand, order=(1,1,1))
         forecast = model.fit().forecast(6)
 
-        fig = px.line(demand, color_discrete_sequence=["#6366F1"])
-        fig.add_scatter(x=forecast.index, y=forecast, mode='lines', name="Forecast",
-                        line=dict(color="#f59e0b"))
+        fig = px.line(demand, color_discrete_sequence=["#60A5FA"])
 
-        fig.update_layout(template="plotly_dark")
+        fig.add_scatter(
+            x=forecast.index,
+            y=forecast,
+            mode='lines',
+            name='Forecast',
+            line=dict(color="#FBBF24")
+        )
+
+        fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)"
+        )
+
         st.plotly_chart(fig, use_container_width=True)
 
 with col2:
@@ -200,13 +255,18 @@ with col2:
         color='Quantity',
         color_continuous_scale='Blues'
     )
-    fig.update_layout(template="plotly_dark")
+
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 
 # -----------------------------
-# EXTRA GRAPHS (ADVANCED LOOK)
+# EXTRA GRAPHS
 # -----------------------------
 col1, col2 = st.columns(2)
 
@@ -214,9 +274,19 @@ with col1:
     st.subheader("🌍 Country Sales")
 
     country_sales = df.groupby('Country')['TotalAmount'].sum().reset_index()
-    fig = px.bar(country_sales.sort_values(by='TotalAmount', ascending=False).head(10),
-                 x='Country', y='TotalAmount', color='TotalAmount')
-    fig.update_layout(template="plotly_dark")
+
+    fig = px.bar(
+        country_sales.sort_values(by='TotalAmount', ascending=False).head(10),
+        x='Country',
+        y='TotalAmount',
+        color='TotalAmount'
+    )
+
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
 with col2:
@@ -226,5 +296,10 @@ with col2:
     hourly = df.groupby('Hour')['TotalAmount'].sum().reset_index()
 
     fig = px.line(hourly, x='Hour', y='TotalAmount')
-    fig.update_layout(template="plotly_dark")
+
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
+
     st.plotly_chart(fig, use_container_width=True)
