@@ -23,9 +23,14 @@ h1, h2, h3 {color: #00C9A7;}
 
 # ---------------------------
 #  LOAD DATA
-# ---------------------------
-data_path = r"C:\Users\HP\OneDrive\Desktop\ZIDIO_1ST\zidio_retailpulse\DATASET\feature_engineered_data.csv"
+# --------------------------
+
+base_path = os.path.dirname(__file__)
+
+data_path = os.path.join(base_path, "..", "DATASET", "feature_engineered_data.csv")
+
 df = pd.read_csv(data_path)
+
 df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
 
 # ---------------------------
