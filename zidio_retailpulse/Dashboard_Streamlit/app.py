@@ -1,175 +1,188 @@
-#--how to run dashboard---
-#--give the command in the terminal as given below
-# 1---  cd zidio_retailpulse/Dashboard_Streamlit
-# 2----  streamlit run app.py
-
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import os
+from sklearn.cluster import KMeans
+from statsmodels.tsa.arima.model import ARIMA
 
-st.set_page_config(page_title="RetailPulse", layout="wide")
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
+st.set_page_config(page_title="RetailPulse Dashboard", layout="wide")
 
-# ---------------------------
-#  CUSTOM COLORS
-# ---------------------------
+# -----------------------------
+# CUSTOM CSS (LIGHT THEME)
+# -----------------------------
 st.markdown("""
 <style>
-.main {background-color: #0E1117; color: white;}
-h1, h2, h3 {color: #00C9A7;}
+body {
+    background-color: #F5F7FA;
+}
+h1, h2, h3 {
+    color: #2E3A59;
+}
+.stMetric {
+    background-color: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.05);
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------
-#  LOAD DATA
-# --------------------------
+st.title(" RetailPulse Analytics Dashboard")
 
-base_path = os.path.dirname(__file__)
-
-data_path = os.path.join(base_path, "..", "DATASET", "feature_engineered_data.csv")
-
-df = pd.read_csv(data_path)
-
+# -----------------------------
+# LOAD DATA
+# -----------------------------
+df = pd.read_csv("DATASET/feature_engineered_data.csv")
 df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
 
-# ---------------------------
-#  SIDEBAR FILTERS
-# ---------------------------
-st.sidebar.title("Filters")
+# -----------------------------
+# SIDEBAR
+# -----------------------------
+st.sidebar.header(" Filters")
 
-date_range = st.sidebar.date_input(
-    "Select Date Range",
-    [df['InvoiceDate'].min(), df['InvoiceDate'].max()]
-)
-
-country = st.sidebar.selectbox(
-    "Select Country",
-    ["All"] + list(df['Country'].dropna().unique())
-)
-
-# Apply filters
-if len(date_range) == 2:
-    df = df[(df['InvoiceDate'] >= pd.to_datetime(date_range[0])) &
-            (df['InvoiceDate'] <= pd.to_datetime(date_range[1]))]
+country = st.sidebar.selectbox("Select Country", ["All"] + list(df['Country'].unique()))
 
 if country != "All":
     df = df[df['Country'] == country]
 
-# ---------------------------
-#  TITLE
-# ---------------------------
-st.markdown("<h1 style='text-align:center;'> RetailPulse Dashboard</h1>", unsafe_allow_html=True)
-
-# ---------------------------
-#  KPI CARDS
-# ---------------------------
+# -----------------------------
+# KPI CARDS
+# -----------------------------
 col1, col2, col3, col4 = st.columns(4)
 
-col1.markdown(f"""
-<div style="background:#FF6B6B;padding:20px;border-radius:10px;text-align:center">
-<h4>Total Sales</h4>
-<h2>{round(df['TotalAmount'].sum(),2)}</h2>
-</div>
-""", unsafe_allow_html=True)
-
-col2.markdown(f"""
-<div style="background:#4ECDC4;padding:20px;border-radius:10px;text-align:center">
-<h4>Orders</h4>
-<h2>{df['Invoice'].nunique()}</h2>
-</div>
-""", unsafe_allow_html=True)
-
-col3.markdown(f"""
-<div style="background:#FFD93D;padding:20px;border-radius:10px;text-align:center">
-<h4>Customers</h4>
-<h2>{df['Customer ID'].nunique()}</h2>
-</div>
-""", unsafe_allow_html=True)
-
-col4.markdown(f"""
-<div style="background:#6C5CE7;padding:20px;border-radius:10px;text-align:center">
-<h4>Quantity</h4>
-<h2>{int(df['Quantity'].sum())}</h2>
-</div>
-""", unsafe_allow_html=True)
+col1.metric("Total Sales", f"{df['TotalAmount'].sum():,.0f}")
+col2.metric("Orders", df['InvoiceNo'].nunique())
+col3.metric("Customers", df['CustomerID'].nunique())
+col4.metric("Quantity", int(df['Quantity'].sum()))
 
 st.markdown("---")
 
-# ---------------------------
-#  TABS
-# ---------------------------
-tab1, tab2, tab3, tab4 = st.tabs([
-    " Sales",
-    " Forecast",
-    " Customers",
-    " Inventory"
-])
+# -----------------------------
+# ROW 1 (Sales + Quantity Trend)
+# -----------------------------
+col1, col2 = st.columns(2)
 
-# ---------------------------
-# SALES
-# ---------------------------
-with tab1:
+with col1:
+    st.subheader("Sales Trend")
     monthly = df.set_index('InvoiceDate')['TotalAmount'].resample('ME').sum()
 
-    fig = px.line(monthly, title="Monthly Sales Trend",
-                  color_discrete_sequence=['#00C9A7'])
+    fig = px.line(
+        monthly,
+        color_discrete_sequence=["#4CAF50"]
+    )
+    fig.update_layout(
+        plot_bgcolor="white",
+        paper_bgcolor="white"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-    top_products = df.groupby('Description')['Quantity'].sum().sort_values(ascending=False).head(10)
+with col2:
+    st.subheader("Quantity Trend")
+    qty = df.set_index('InvoiceDate')['Quantity'].resample('ME').sum()
 
-    fig2 = px.bar(top_products, orientation='h',
-                  color=top_products.values,
-                  color_continuous_scale='viridis',
-                  title="Top Products")
-    st.plotly_chart(fig2, use_container_width=True)
-
-# ---------------------------
-#  FORECAST
-# ---------------------------
-with tab2:
-    monthly = df.set_index('InvoiceDate')['TotalAmount'].resample('ME').sum()
-    forecast = monthly.rolling(3).mean()
-
-    forecast_df = pd.DataFrame({
-        "Actual": monthly,
-        "Forecast": forecast
-    })
-
-    fig = px.line(forecast_df, title="Forecast vs Actual")
+    fig = px.line(
+        qty,
+        color_discrete_sequence=["#2196F3"]
+    )
+    fig.update_layout(
+        plot_bgcolor="white",
+        paper_bgcolor="white"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------------------
-#  CHURN
-# ---------------------------
-with tab3:
-    churn = df.groupby('Customer ID')['InvoiceDate'].max()
-    recency = (df['InvoiceDate'].max() - churn).dt.days
+# -----------------------------
+# ROW 2 (Churn + Segmentation)
+# -----------------------------
+col1, col2 = st.columns(2)
 
-    churn_flag = recency > 90
-    churn_df = churn_flag.value_counts().rename(index={True: "Churned", False: "Active"})
+with col1:
+    st.subheader("Customer Churn")
 
-    fig = px.pie(values=churn_df.values, names=churn_df.index,
-                 title="Customer Churn")
+    churn = df.groupby('CustomerID')['TotalAmount'].sum().reset_index()
+    churn['Churn'] = churn['TotalAmount'].apply(lambda x: "Churn" if x < 1000 else "Active")
+
+    fig = px.pie(
+        churn,
+        names='Churn',
+        color_discrete_sequence=["#FF6B6B", "#4CAF50"]
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------------------
-#  INVENTORY
-# ---------------------------
-with tab4:
-    product = df.groupby('Description')['Quantity'].sum().reset_index()
-    product['EOQ'] = (2 * product['Quantity'] * 50 / 10) ** 0.5
+with col2:
+    st.subheader("Customer Segments")
 
-    top = product.sort_values(by='EOQ', ascending=False).head(10)
+    cust = df.groupby('CustomerID').agg({
+        'TotalAmount': 'sum',
+        'Quantity': 'sum'
+    }).reset_index()
 
-    fig = px.bar(top, x='EOQ', y='Description',
-                 orientation='h',
-                 color='EOQ',
-                 color_continuous_scale='plasma',
-                 title="Top EOQ Products")
+    kmeans = KMeans(n_clusters=3, random_state=42)
+    cust['Segment'] = kmeans.fit_predict(cust[['TotalAmount', 'Quantity']])
+
+    fig = px.scatter(
+        cust,
+        x='TotalAmount',
+        y='Quantity',
+        color=cust['Segment'].astype(str),
+        color_discrete_sequence=["#4CAF50", "#2196F3", "#FFC107"]
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------------------
-#  FOOTER
-# ---------------------------
-st.markdown("---")
+# -----------------------------
+# ROW 3 (Forecast + Inventory)
+# -----------------------------
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Demand Forecast")
+
+    demand = df.set_index('InvoiceDate')['Quantity'].resample('ME').sum()
+
+    model = ARIMA(demand, order=(1,1,1))
+    model_fit = model.fit()
+
+    forecast = model_fit.forecast(steps=6)
+
+    fig = px.line(
+        demand,
+        color_discrete_sequence=["#2196F3"]
+    )
+
+    fig.add_scatter(
+        x=forecast.index,
+        y=forecast,
+        mode='lines',
+        name='Forecast',
+        line=dict(color="#FF9800")
+    )
+
+    fig.update_layout(
+        plot_bgcolor="white",
+        paper_bgcolor="white"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+with col2:
+    st.subheader("Top Products")
+
+    inv = df.groupby('Description')['Quantity'].sum().reset_index()
+    top_products = inv.sort_values(by='Quantity', ascending=False).head(10)
+
+    fig = px.bar(
+        top_products,
+        x='Quantity',
+        y='Description',
+        orientation='h',
+        color='Quantity',
+        color_continuous_scale='Blues'
+    )
+
+    fig.update_layout(
+        plot_bgcolor="white",
+        paper_bgcolor="white"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
