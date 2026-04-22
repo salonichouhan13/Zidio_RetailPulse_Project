@@ -128,7 +128,7 @@ with tab1:
 #  FORECAST
 # ---------------------------
 with tab2:
-    monthly = df.set_index('InvoiceDate')['TotalAmount'].resample('M').sum()
+    monthly = df.set_index('InvoiceDate')['TotalAmount'].resample('ME').sum()
     forecast = monthly.rolling(3).mean()
 
     forecast_df = pd.DataFrame({
