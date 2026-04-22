@@ -34,7 +34,12 @@ st.title(" RetailPulse Analytics Dashboard")
 # -----------------------------
 # LOAD DATA
 # -----------------------------
-df = pd.read_csv("DATASET/feature_engineered_data.csv")
+import os
+
+base_path = os.path.dirname(__file__)
+data_path = os.path.join(base_path, "..", "DATASET", "feature_engineered_data.csv")
+
+df = pd.read_csv(data_path)
 df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
 
 # -----------------------------
