@@ -78,12 +78,6 @@ pip install -r requirements.txt
 cd zidio_retailpulse/Dashboard_Streamlit
 streamlit run app.py
 
----
-
-##  Live Demo
-
-👉 (Add your deployed link here after deployment)
-
 ##  Results
 
 * Identified top-selling products
